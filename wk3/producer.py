@@ -58,11 +58,10 @@ if __name__ == '__main__':
     # Create Producer instance
     producers = [create_producer(config_file, topic) for _ in range(0, n_producer)]
 
-    threads = [threading.Thread(target=produce_msg, 
-                                args=(producers[i], 
-                                      topic,
-                                      "producer{}".format(i), 
-                                      breadcrumbs)) for i in range(0, n_producer)]
+    threads = [threading.Thread(
+        target=produce_msg, args=(producers[i], topic, "producer{}".format(i), breadcrumbs)) 
+        for i in range(0, n_producer)]
+
     for t in threads:
         t.start()
 

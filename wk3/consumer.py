@@ -23,26 +23,29 @@ def consume_msg(consumer, topic, consumer_name):
     # Process messages
     total_count = 0
 
-    running = True
-    while running:
-        msg = consumer.poll(1.0)
-        if msg is None:
-            running = False
-        elif msg.error():
-            logging.info('error: {}'.format(msg.error()))
-        else:
-            # Check for Kafka message
-            record_key = msg.key()
-            record_value = msg.value()
-            total_count += 1
-            logging.info("[{}]   Consumed record with key {} and value {}, \
-                    and updated total count to {}"
-                    .format(consumer_name, record_key, record_value, total_count))
-
-    consumer.close()
-
-    logging.info("{} consumed {} message in total"
-                 .format(consumer_name, total_count))
+    try:
+        while True:
+            msg = consumer.poll(1.0)
+            if msg is None:
+                logging.info("[{}]   Waiting for message or event/error in poll()"
+                        .format(consumer_name))
+            elif msg.error():
+                logging.info('[{}]   error: {}'.format(consumer_name, msg.error()))
+            else:
+                # Check for Kafka message
+                record_key = msg.key()
+                record_value = msg.value()
+                total_count += 1
+                logging.info("[{}]   Consumed record with key {} and value {}, \
+                        and updated total count to {}"
+                        .format(consumer_name, record_key, record_value, total_count))
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Leave group and commit final offsets
+        logging.info("{} consumed {} message in total"
+            .format(consumer_name, total_count))
+        consumer.close()
 
 
 if __name__ == '__main__':
@@ -60,13 +63,11 @@ if __name__ == '__main__':
     consumers = [create_consumer(config_file) for _ in range(0, n_consumer)]
 
     threads = [threading.Thread(
-                   target=consume_msg, 
-                   args=(consumers[i], 
-                         topic,
-                         "consumer{}".format(i))) for i in range(0, n_consumer)]
+        target=consume_msg, args=(consumers[i], topic, "consumer{}".format(i))) 
+        for i in range(0, n_consumer)]
+        
     for t in threads:
         t.start()
 
     for t in threads:
         t.join()
-
