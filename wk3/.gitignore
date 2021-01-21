@@ -3,3 +3,4 @@ ccloud-venv/
 confluent-exercise/
 .confluent/
 sample
+*.log

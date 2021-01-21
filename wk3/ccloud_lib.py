@@ -127,6 +127,9 @@ def parse_args():
                           dest="topic",
                           help="topic name",
                           required=True)
+    required.add_argument('--nthread',
+                          type=int,
+                          help="number of concurrent producers or consumer")
     args = parser.parse_args()
 
     return args
