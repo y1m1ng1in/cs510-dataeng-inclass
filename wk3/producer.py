@@ -36,7 +36,7 @@ if __name__ == '__main__':
     topic = args.topic
 
     # Create Producer instance
-    producer = create_producer(config_file)
+    producer = create_producer(config_file, topic)
 
     delivered_records = 0
 

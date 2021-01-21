@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from confluent_kafka import Consumer
 from factory import create_consumer
 import json
