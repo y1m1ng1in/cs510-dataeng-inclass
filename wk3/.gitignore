@@ -1,0 +1,3 @@
+*.pyc
+ccloud-venv/
+confluent-exercise/
