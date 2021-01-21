@@ -8,11 +8,13 @@
 # =============================================================================
 
 from confluent_kafka import Producer, KafkaError
+from time import sleep
 from factory import create_producer
 import json
 import logging
 import threading
 import ccloud_lib
+import sys
 
 
 def produce_msg(producer, topic, record_key, breadcrumbs):
@@ -30,6 +32,7 @@ def produce_msg(producer, topic, record_key, breadcrumbs):
         record_value = json.dumps(breadcrumb)
         logging.info("Producing record: {}\t{}".format(record_key, record_value))
         producer.produce(topic, key=record_key, value=record_value, on_delivery=acked)
+        sleep(0.25)
         # p.poll() serves delivery reports (on_delivery)
         # from previous produce() calls.
         producer.poll(0)
@@ -39,7 +42,8 @@ def produce_msg(producer, topic, record_key, breadcrumbs):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(filename='./producer.log', level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)    
+    #logging.basicConfig(filename="./producer.log", level=logging.DEBUG)
 
     # Read arguments and configurations and initialize
     args = ccloud_lib.parse_args()
@@ -64,15 +68,4 @@ if __name__ == '__main__':
 
     for t in threads:
         t.join()
-
-    """thread1 = threading.Thread(
-        target=produce_msg, args=(producers[0], topic, "producer1", breadcrumbs))
-    thread2 = threading.Thread(
-        target=produce_msg, args=(producers[1], topic, "producer2", breadcrumbs))
-
-    thread1.start()
-    thread2.start()
-
-    thread1.join()
-    thread2.join()"""
 

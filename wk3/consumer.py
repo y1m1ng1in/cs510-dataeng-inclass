@@ -1,19 +1,4 @@
 #!/usr/bin/env python
-#
-# Copyright 2020 Confluent Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
 # =============================================================================
 #
@@ -25,49 +10,63 @@
 from confluent_kafka import Consumer
 from factory import create_consumer
 import json
+import logging
+import threading
 import ccloud_lib
+import sys
 
 
-if __name__ == '__main__':
-
-    # Read arguments and configurations and initialize
-    args = ccloud_lib.parse_args()
-    config_file = args.config_file
-    topic = args.topic
-
-    # Create Consumer instance
-    # 'auto.offset.reset=earliest' to start reading from the beginning of the
-    #   topic if no committed offsets exist
-    consumer = create_consumer(config_file)
-
+def consume_msg(consumer, topic, consumer_name):
     # Subscribe to topic
     consumer.subscribe([topic])
 
     # Process messages
     total_count = 0
-    try:
-        while True:
-            msg = consumer.poll(1.0)
-            if msg is None:
-                # No message available within timeout.
-                # Initial message consumption may take up to
-                # `session.timeout.ms` for the consumer group to
-                # rebalance and start consuming
-                print("Waiting for message or event/error in poll()")
-                continue
-            elif msg.error():
-                print('error: {}'.format(msg.error()))
-            else:
-                # Check for Kafka message
-                record_key = msg.key()
-                record_value = msg.value()
-                data = json.loads(record_value)
-                total_count += 1
-                print("Consumed record with key {} and value {}, \
-                      and updated total count to {}"
-                      .format(record_key, record_value, total_count))
-    except KeyboardInterrupt:
-        pass
-    finally:
-        # Leave group and commit final offsets
-        consumer.close()
+
+    running = True
+    while running:
+        msg = consumer.poll(1.0)
+        if msg is None:
+            running = False
+        elif msg.error():
+            logging.info('error: {}'.format(msg.error()))
+        else:
+            # Check for Kafka message
+            record_key = msg.key()
+            record_value = msg.value()
+            total_count += 1
+            logging.info("[{}]   Consumed record with key {} and value {}, \
+                    and updated total count to {}"
+                    .format(consumer_name, record_key, record_value, total_count))
+
+    consumer.close()
+
+    logging.info("{} consumed {} message in total"
+                 .format(consumer_name, total_count))
+
+
+if __name__ == '__main__':
+
+    #logging.basicConfig(filename='./consumer.log', level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+    # Read arguments and configurations and initialize
+    args = ccloud_lib.parse_args()
+    config_file = args.config_file
+    topic = args.topic
+    n_consumer = args.nthread
+
+    # Create Consumer instance
+    consumers = [create_consumer(config_file) for _ in range(0, n_consumer)]
+
+    threads = [threading.Thread(
+                   target=consume_msg, 
+                   args=(consumers[i], 
+                         topic,
+                         "consumer{}".format(i))) for i in range(0, n_consumer)]
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
