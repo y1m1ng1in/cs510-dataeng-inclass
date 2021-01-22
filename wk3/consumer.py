@@ -7,7 +7,7 @@
 #
 # =============================================================================
 
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, TopicPartition
 from factory import create_consumer
 import json
 import logging
@@ -16,9 +16,12 @@ import ccloud_lib
 import sys
 
 
-def consume_msg(consumer, topic, consumer_name):
+def consume_msg(consumer, topic, consumer_name, partition=-1):
     # Subscribe to topic
     consumer.subscribe([topic])
+
+    if partition > 0:
+        consumer.assign([TopicPartition(topic, partition)])
 
     # Process messages
     total_count = 0
@@ -54,16 +57,21 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     # Read arguments and configurations and initialize
-    args = ccloud_lib.parse_args()
-    config_file = args.config_file
-    topic = args.topic
-    n_consumer = args.nthread
+    args         = ccloud_lib.parse_args()
+    config_file  = args.config_file
+    topic        = args.topic
+    n_consumer   = args.nthread
+    random_key   = args.random
+    partition_id = -1
+    if random_key:
+        partition_id = args.key
 
     # Create Consumer instance
     consumers = [create_consumer(config_file) for _ in range(0, n_consumer)]
 
-    threads = [threading.Thread(
-        target=consume_msg, args=(consumers[i], topic, "consumer{}".format(i))) 
+    threads   = [threading.Thread(
+        target=consume_msg, 
+        args=(consumers[i], topic, "consumer{}".format(i), partition_id)) 
         for i in range(0, n_consumer)]
         
     for t in threads:
@@ -71,3 +79,4 @@ if __name__ == '__main__':
 
     for t in threads:
         t.join()
+

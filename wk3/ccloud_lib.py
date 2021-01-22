@@ -130,6 +130,13 @@ def parse_args():
     required.add_argument('--nthread',
                           type=int,
                           help="number of concurrent producers or consumer")
+    parser.add_argument('--random', 
+                         action="store_true",
+                         help="enable random key")
+    parser.add_argument('--key',
+                        type=int,
+                        default=-1,
+                        help="record key to consume")
     args = parser.parse_args()
 
     return args
@@ -178,3 +185,4 @@ def create_topic(conf, topic):
             if e.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:
                 print("Failed to create topic {}: {}".format(topic, e))
                 sys.exit(1)
+
