@@ -10,10 +10,11 @@ if __name__ == '__main__':
     # Read arguments and configurations and initialize
     args = ccloud_lib.parse_args()
     config_file = args.config_file
+    group_id = args.groupid
     topic = args.topic
 
     # Create Consumer instance
-    consumer = create_consumer(config_file)
+    consumer = create_consumer(config_file, group_id)
 
     # Subscribe to topic
     consumer.subscribe([topic])

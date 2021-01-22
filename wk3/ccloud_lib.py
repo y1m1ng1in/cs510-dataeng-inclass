@@ -140,6 +140,10 @@ def parse_args():
     parser.add_argument('--g4',
                         action="store_true",
                         help="enable G.4 experiment mode")
+    parser.add_argument('--groupid',
+                        type=str,
+                        default="python_example_group_1",
+                        help="group id")
     args = parser.parse_args()
 
     return args

@@ -62,12 +62,13 @@ if __name__ == '__main__':
     topic        = args.topic
     n_consumer   = args.nthread
     random_key   = args.random
+    group_id     = args.groupid
     partition_id = -1
     if random_key:
         partition_id = args.key
 
     # Create Consumer instance
-    consumers = [create_consumer(config_file) for _ in range(0, n_consumer)]
+    consumers = [create_consumer(config_file, group_id) for _ in range(0, n_consumer)]
 
     threads   = [threading.Thread(
         target=consume_msg, 

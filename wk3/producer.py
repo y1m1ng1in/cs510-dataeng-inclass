@@ -50,7 +50,7 @@ def produce_msg(producer, topic, record_key, breadcrumbs,
             producer.produce(
                 topic, key=str(record_key), value=record_value, on_delivery=acked, 
                 partition=record_key)
-        #sleep(0.25)
+        sleep(0.25)
         # p.poll() serves delivery reports (on_delivery)
         # from previous produce() calls.
         if experiment_g4:
@@ -59,9 +59,11 @@ def produce_msg(producer, topic, record_key, breadcrumbs,
             if experimental_counter > 0 and experimental_counter % 15 == 0:
                 producer.flush()
         experimental_counter += 1
-        #producer.poll(0)
-
-    #producer.flush()
+        if not experiment_g4:
+            producer.poll(0)
+    
+    if not experiment_g4:
+        producer.flush()
 
 
 if __name__ == '__main__':

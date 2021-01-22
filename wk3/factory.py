@@ -15,7 +15,7 @@ def create_producer(config_file, topic):
     ccloud_lib.create_topic(conf, topic)
     return producer
 
-def create_consumer(config_file):
+def create_consumer(config_file, group_id):
     conf = ccloud_lib.read_ccloud_config(config_file)
     # Create Consumer instance
     # 'auto.offset.reset=earliest' to start reading from the beginning of the
@@ -26,7 +26,7 @@ def create_consumer(config_file):
         'security.protocol': conf['security.protocol'],
         'sasl.username': conf['sasl.username'],
         'sasl.password': conf['sasl.password'],
-        'group.id': 'python_example_group_1',
+        'group.id': group_id,
         'auto.offset.reset': 'earliest',
     })
     return consumer
