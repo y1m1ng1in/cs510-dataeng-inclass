@@ -137,6 +137,9 @@ def parse_args():
                         type=int,
                         default=-1,
                         help="record key to consume")
+    parser.add_argument('--g4',
+                        action="store_true",
+                        help="enable G.4 experiment mode")
     args = parser.parse_args()
 
     return args

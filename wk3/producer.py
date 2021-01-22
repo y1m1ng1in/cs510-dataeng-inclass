@@ -18,7 +18,8 @@ import ccloud_lib
 import sys
 
 
-def produce_msg(producer, topic, record_key, breadcrumbs, random_key=False):
+def produce_msg(producer, topic, record_key, breadcrumbs, 
+                random_key=False, experiment_g4=True):
     def acked(err, msg):
         """Delivery report handler called on
         successful or failed delivery of message
@@ -29,6 +30,8 @@ def produce_msg(producer, topic, record_key, breadcrumbs, random_key=False):
             logging.info("Produced record to topic {} partition [{}] @ offset {}"
                   .format(msg.topic(), msg.partition(), msg.offset()))
 
+    # user for experiment G.4
+    experimental_counter = 0
     for breadcrumb in breadcrumbs:
         # If random_key is enabled, then generate a random number in [1,5]
         if random_key:
@@ -47,12 +50,18 @@ def produce_msg(producer, topic, record_key, breadcrumbs, random_key=False):
             producer.produce(
                 topic, key=str(record_key), value=record_value, on_delivery=acked, 
                 partition=record_key)
-        sleep(0.25)
+        #sleep(0.25)
         # p.poll() serves delivery reports (on_delivery)
         # from previous produce() calls.
-        producer.poll(0)
+        if experiment_g4:
+            if experimental_counter > 0 and experimental_counter % 5 == 0:
+                sleep(2)
+            if experimental_counter > 0 and experimental_counter % 15 == 0:
+                producer.flush()
+        experimental_counter += 1
+        #producer.poll(0)
 
-    producer.flush()
+    #producer.flush()
 
 
 if __name__ == '__main__':
@@ -61,11 +70,12 @@ if __name__ == '__main__':
     #logging.basicConfig(filename="./producer.log", level=logging.DEBUG)
 
     # Read arguments and configurations and initialize
-    args = ccloud_lib.parse_args()
-    config_file = args.config_file
-    topic = args.topic
-    n_producer = args.nthread
-    random_key = args.random
+    args          = ccloud_lib.parse_args()
+    config_file   = args.config_file
+    topic         = args.topic
+    n_producer    = args.nthread
+    random_key    = args.random
+    experiment_g4 = args.g4
 
     sample = open('bcsample.json')
     breadcrumbs = json.load(sample)
@@ -76,7 +86,8 @@ if __name__ == '__main__':
 
     threads = [threading.Thread(
         target=produce_msg, 
-        args=(producers[i], topic, "producer{}".format(i), breadcrumbs, random_key)) 
+        args=(producers[i], topic, "producer{}".format(i), breadcrumbs, 
+              random_key, experiment_g4)) 
         for i in range(0, n_producer)]
 
     for t in threads:
