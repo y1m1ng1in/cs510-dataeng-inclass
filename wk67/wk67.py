@@ -11,25 +11,25 @@ import csv
 import io
 from collections import OrderedDict 
 
-DBname = "week6"
-DBuser = "yiming"
-DBpwd = "971013970206Lym"
+DBname = "repalceme"
+DBuser = "repalceme"
+DBpwd = "repalceme"
 TableName = 'CensusData'
 Datafile = "acs2015_census_tract_data.csv"  # name of the data file to be loaded
 CreateDB = False  # indicates whether the DB table should be (re)-created
 Year = 2015
 
 def format_row(row):
-	# handle the null vals
-	for key in row:
-		if not row[key]:
-			row[key] = 0
-		row['County'] = row['County'].replace('\'','')  # eliminate quotes within literals
-	return row	
+  # handle the null vals
+  for key in row:
+    if not row[key]:
+      row[key] = 0
+    row['County'] = row['County'].replace('\'','')  # eliminate quotes within literals
+  return row  
 
 def row2vals(row):
-	row = format_row(row)
-	ret = f"""
+  row = format_row(row)
+  ret = f"""
        {Year},                          -- Year
        {row['CensusTract']},            -- CensusTract
        '{row['State']}',                -- State
@@ -68,14 +68,14 @@ def row2vals(row):
        {row['SelfEmployed']},           -- SelfEmployed
        {row['FamilyWork']},             -- FamilyWork
        {row['Unemployment']}            -- Unemployment
-	"""
-	return ret
+  """
+  return ret
 
 def row2dict(row, append_year=False):
-	row = format_row(row)
-	if append_year:
-		row['Year'] = Year
-	return row
+  row = format_row(row)
+  if append_year:
+    row['Year'] = Year
+  return row
 
 def initialize():
   global Year
@@ -95,142 +95,142 @@ def initialize():
 # read the input data file into a list of row strings
 # skip the header row
 def readdata(fname):
-	print(f"readdata: reading from File: {fname}")
-	with open(fname, mode="r") as fil:
-		dr = csv.DictReader(fil)
-		headerRow = next(dr)
-		# print(f"Header: {headerRow}")
+  print(f"readdata: reading from File: {fname}")
+  with open(fname, mode="r") as fil:
+    dr = csv.DictReader(fil)
+    headerRow = next(dr)
+    # print(f"Header: {headerRow}")
 
-		rowlist = []
-		for row in dr:
-			rowlist.append(row)
+    rowlist = []
+    for row in dr:
+      rowlist.append(row)
 
-	return rowlist
+  return rowlist
 
 # convert list of data rows into list of SQL 'INSERT INTO ...' commands
 def getSQLcmnds(rowlist, unlogged, temp):
-	cmdlist = []
-	name = TableName
-	if unlogged:
-		name = "stage"
-	if temp:
-		name = "temp"
-	for row in rowlist:
-		valstr = row2vals(row)
-		cmd = f"INSERT INTO {name} VALUES ({valstr});"
-		cmdlist.append(cmd)
-	return cmdlist
+  cmdlist = []
+  name = TableName
+  if unlogged:
+    name = "stage"
+  if temp:
+    name = "temp"
+  for row in rowlist:
+    valstr = row2vals(row)
+    cmd = f"INSERT INTO {name} VALUES ({valstr});"
+    cmdlist.append(cmd)
+  return cmdlist
 
 # connect to the database
 def dbconnect():
-	connection = psycopg2.connect(
+  connection = psycopg2.connect(
         host="localhost",
         database=DBname,
         user=DBuser,
         password=DBpwd,
-	)
-	connection.autocommit = False
-	return connection
+  )
+  connection.autocommit = False
+  return connection
 
 # create the target table 
 # assumes that conn is a valid, open connection to a Postgres database
 def createTable(conn, unlogged=False, temp=False, temp_buf=8000000):
-	unlogged_stmt, temp_stmt, temp_buf_stmt = "", "", ""
-	name = TableName
-	if unlogged:
-		unlogged_stmt = "UNLOGGED"
-		name = "stage"
-	if temp:
-		temp_stmt = "TEMPORARY"
-		name = "temp"
-		temp_buf_stmt = f"SET temp_buffers={temp_buf}"
-	with conn.cursor() as cursor:
-		cursor.execute(f"""
-        	DROP TABLE IF EXISTS {name};
-					{temp_buf_stmt};
-        	CREATE {unlogged_stmt} {temp_stmt} TABLE {name} (
-            	Year                INTEGER,
+  unlogged_stmt, temp_stmt, temp_buf_stmt = "", "", ""
+  name = TableName
+  if unlogged:
+    unlogged_stmt = "UNLOGGED"
+    name = "stage"
+  if temp:
+    temp_stmt = "TEMPORARY"
+    name = "temp"
+    temp_buf_stmt = f"SET temp_buffers={temp_buf}"
+  with conn.cursor() as cursor:
+    cursor.execute(f"""
+          DROP TABLE IF EXISTS {name};
+          {temp_buf_stmt};
+          CREATE {unlogged_stmt} {temp_stmt} TABLE {name} (
+              Year                INTEGER,
               CensusTract         NUMERIC,
-            	State               TEXT,
-            	County              TEXT,
-            	TotalPop            INTEGER,
-            	Men                 INTEGER,
-            	Women               INTEGER,
-            	Hispanic            DECIMAL,
-            	White               DECIMAL,
-            	Black               DECIMAL,
-            	Native              DECIMAL,
-            	Asian               DECIMAL,
-            	Pacific             DECIMAL,
-            	Citizen             DECIMAL,
-            	Income              DECIMAL,
-            	IncomeErr           DECIMAL,
-            	IncomePerCap        DECIMAL,
-            	IncomePerCapErr     DECIMAL,
-            	Poverty             DECIMAL,
-            	ChildPoverty        DECIMAL,
-            	Professional        DECIMAL,
-            	Service             DECIMAL,
-            	Office              DECIMAL,
-            	Construction        DECIMAL,
-            	Production          DECIMAL,
-            	Drive               DECIMAL,
-            	Carpool             DECIMAL,
-            	Transit             DECIMAL,
-            	Walk                DECIMAL,
-            	OtherTransp         DECIMAL,
-            	WorkAtHome          DECIMAL,
-            	MeanCommute         DECIMAL,
-            	Employed            INTEGER,
-            	PrivateWork         DECIMAL,
-            	PublicWork          DECIMAL,
-            	SelfEmployed        DECIMAL,
-            	FamilyWork          DECIMAL,
-            	Unemployment        DECIMAL
-         	);	
-    	""")
+              State               TEXT,
+              County              TEXT,
+              TotalPop            INTEGER,
+              Men                 INTEGER,
+              Women               INTEGER,
+              Hispanic            DECIMAL,
+              White               DECIMAL,
+              Black               DECIMAL,
+              Native              DECIMAL,
+              Asian               DECIMAL,
+              Pacific             DECIMAL,
+              Citizen             DECIMAL,
+              Income              DECIMAL,
+              IncomeErr           DECIMAL,
+              IncomePerCap        DECIMAL,
+              IncomePerCapErr     DECIMAL,
+              Poverty             DECIMAL,
+              ChildPoverty        DECIMAL,
+              Professional        DECIMAL,
+              Service             DECIMAL,
+              Office              DECIMAL,
+              Construction        DECIMAL,
+              Production          DECIMAL,
+              Drive               DECIMAL,
+              Carpool             DECIMAL,
+              Transit             DECIMAL,
+              Walk                DECIMAL,
+              OtherTransp         DECIMAL,
+              WorkAtHome          DECIMAL,
+              MeanCommute         DECIMAL,
+              Employed            INTEGER,
+              PrivateWork         DECIMAL,
+              PublicWork          DECIMAL,
+              SelfEmployed        DECIMAL,
+              FamilyWork          DECIMAL,
+              Unemployment        DECIMAL
+           );  
+      """)
 
-		print(f"Created {name}")
+    print(f"Created {name}")
 
 def load(conn, icmdlist, unlogged=False, temp=False, temp_buf=8000000):
-	if unlogged or temp:	# create unlogged table or temporary table accordingly
-		createTable(conn, unlogged=unlogged, temp=temp, temp_buf=temp_buf)
+  if unlogged or temp:  # create unlogged table or temporary table accordingly
+    createTable(conn, unlogged=unlogged, temp=temp, temp_buf=temp_buf)
 
-	with conn.cursor() as cursor:
-		print(f"Loading {len(icmdlist)} rows")
-		start = time.perf_counter()
+  with conn.cursor() as cursor:
+    print(f"Loading {len(icmdlist)} rows")
+    start = time.perf_counter()
     
-		for cmd in icmdlist:
-			print(cmd)
-			cursor.execute(cmd)
+    for cmd in icmdlist:
+      print(cmd)
+      cursor.execute(cmd)
                 
-		table = ""
-		if unlogged:
-			table = "stage"
-		if temp:
-			table = "temp"
-		if unlogged or temp:
-			cursor.execute(f"""
-				INSERT INTO {TableName}
-					(SELECT * FROM {table});
-			""")
+    table = ""
+    if unlogged:
+      table = "stage"
+    if temp:
+      table = "temp"
+    if unlogged or temp:
+      cursor.execute(f"""
+        INSERT INTO {TableName}
+          (SELECT * FROM {table});
+      """)
 
-		elapsed = time.perf_counter() - start
-		print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
+    elapsed = time.perf_counter() - start
+    print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
 
-		cursor.execute(f"""
-			ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
+    cursor.execute(f"""
+      ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
       CREATE INDEX idx_{TableName}_State ON {TableName}(State);
-		""")
+    """)
 
 def load_batch(conn, rowlist):
-	with conn.cursor() as cursor:
-		rowlist = [ dict(row2dict(row, append_year=True)) for row in rowlist ]
-		print(f"Loading {len(rowlist)} rows")
+  with conn.cursor() as cursor:
+    rowlist = [ dict(row2dict(row, append_year=True)) for row in rowlist ]
+    print(f"Loading {len(rowlist)} rows")
 
-		start = time.perf_counter()
+    start = time.perf_counter()
 
-		psycopg2.extras.execute_batch(cursor, f"""
+    psycopg2.extras.execute_batch(cursor, f"""
       INSERT INTO {TableName} VALUES (
         %(Year)s,
         %(CensusTract)s,
@@ -249,98 +249,101 @@ def load_batch(conn, rowlist):
         %(Income)s,
         %(IncomeErr)s,
         %(IncomePerCap)s,
-				%(IncomePerCapErr)s,
-				%(Poverty)s,
-				%(ChildPoverty)s,
-				%(Professional)s,
-				%(Service)s,
-				%(Office)s,
-				%(Construction)s,
-				%(Production)s,
-				%(Drive)s,
-				%(Carpool)s,
-				%(Transit)s,
-				%(Walk)s,
-				%(OtherTransp)s,
-				%(WorkAtHome)s,
-				%(MeanCommute)s,
-				%(Employed)s,
-				%(PrivateWork)s,
-				%(PublicWork)s,
-				%(SelfEmployed)s,
-				%(FamilyWork)s,
-				%(Unemployment)s
+        %(IncomePerCapErr)s,
+        %(Poverty)s,
+        %(ChildPoverty)s,
+        %(Professional)s,
+        %(Service)s,
+        %(Office)s,
+        %(Construction)s,
+        %(Production)s,
+        %(Drive)s,
+        %(Carpool)s,
+        %(Transit)s,
+        %(Walk)s,
+        %(OtherTransp)s,
+        %(WorkAtHome)s,
+        %(MeanCommute)s,
+        %(Employed)s,
+        %(PrivateWork)s,
+        %(PublicWork)s,
+        %(SelfEmployed)s,
+        %(FamilyWork)s,
+        %(Unemployment)s
       );
       """, rowlist)
 
-		elapsed = time.perf_counter() - start
-		print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
+    elapsed = time.perf_counter() - start
+    print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
 
-		cursor.execute(f"""
-			ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
+    cursor.execute(f"""
+      ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
       CREATE INDEX idx_{TableName}_State ON {TableName}(State);
-		""")
+    """)
 
 def load_by_copy_from(conn, rowlist):
-	def clean_csv_value(value) -> str:
-		if value is None:
-			return r'\N'
-		return str(value).replace('\n', '\\n')
+  def clean_csv_value(value) -> str:
+    if value is None:
+      return r'\N'
+    return str(value).replace('\n', '\\n')
 
-	with conn.cursor() as cursor:
-		rowlist = [ 
-			OrderedDict(
-				list(OrderedDict([('Year', Year)]).items()) + list(row2dict(row).items())
-			) for row in rowlist 
-		]
-		print(f"Loading {len(rowlist)} rows")
+  with conn.cursor() as cursor:
+    rowlist = [ 
+      OrderedDict(
+        list(OrderedDict([('Year', Year)]).items()) 
+        + list(row2dict(row).items())
+      ) for row in rowlist 
+    ]
+    print(f"Loading {len(rowlist)} rows")
 
-		start = time.perf_counter()
+    start = time.perf_counter()
 
-		csv_file_like_object = io.StringIO()
-		for row in rowlist:
-			csv_file_like_object.write('|'.join(map(clean_csv_value, [row[key] for key in row])) + '\n')
-		csv_file_like_object.seek(0)
-		cursor.copy_from(csv_file_like_object, TableName, sep='|')
+    csv_file_like_object = io.StringIO()
+    for row in rowlist:
+      csv_file_like_object.write(
+        '|'.join(map(clean_csv_value, [row[key] for key in row])) + '\n')
+    csv_file_like_object.seek(0)
+    cursor.copy_from(csv_file_like_object, TableName, sep='|')
 
-		elapsed = time.perf_counter() - start
-		print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
+    elapsed = time.perf_counter() - start
+    print(f'Finished Loading. Elapsed Time: {elapsed:0.4} seconds')
 
-		cursor.execute(f"""
-			ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
+    cursor.execute(f"""
+      ALTER TABLE {TableName} ADD PRIMARY KEY (Year, CensusTract);
       CREATE INDEX idx_{TableName}_State ON {TableName}(State);
-		""")
+    """)
 
 
 def main():
-		# flags
-		execute_in_batch     = False
-		execute_by_copy_from = True
-		unlogged_table       = False
-		temporary_table      = False
-		
-		# variables
-		temporary_table_buffer_size = 256000000
+    # flags
+    execute_in_batch     = False
+    execute_by_copy_from = True
+    unlogged_table       = False
+    temporary_table      = False
+    
+    # variables
+    temporary_table_buffer_size = 256000000
 
-		initialize()
-		conn = dbconnect()
-		rlis = readdata(Datafile)
+    initialize()
+    conn = dbconnect()
+    rlis = readdata(Datafile)
 
-		if CreateDB:
-			createTable(conn)
+    if CreateDB:
+      createTable(conn)
 
-		if execute_by_copy_from:
-			load_by_copy_from(conn, rlis)
-		elif execute_in_batch:
-			load_batch(conn, rlis)
-		else:
-			cmdlist = getSQLcmnds(rlis, unlogged=unlogged_table, temp=temporary_table)
-			load(
-				conn, 
-				cmdlist, 
-				unlogged=unlogged_table, 
-				temp=temporary_table, 
-				temp_buf=temporary_table_buffer_size)
+    if execute_by_copy_from:
+      load_by_copy_from(conn, rlis)
+    elif execute_in_batch:
+      load_batch(conn, rlis)
+    else:
+      cmdlist = getSQLcmnds(
+        rlis, unlogged=unlogged_table, temp=temporary_table)
+      load(
+        conn, 
+        cmdlist, 
+        unlogged=unlogged_table, 
+        temp=temporary_table, 
+        temp_buf=temporary_table_buffer_size)
 
 
 if __name__ == "__main__":
